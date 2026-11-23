@@ -1,6 +1,6 @@
 # The daily reading: a scheduled task for Claude Code
 
-This is the prompt of the task that runs every weekday morning on my computer. It opens my LinkedIn analytics in Chrome, read-only, records the numbers, archives what I published, and rebuilds the dashboard.
+This is the prompt of the task that runs every morning on my computer. It opens my LinkedIn analytics in Chrome, read-only, records the numbers, archives what I published, and rebuilds the dashboard.
 
 **What it needs.** Everything in the README's "What you need": the Claude desktop app on a direct Anthropic plan, the Claude in Chrome extension connected and signed in to the same organization as Claude Code, LinkedIn signed in in that browser, and Python 3.10 or later. At the scheduled time, the app must be running, the browser open and the computer awake: a scheduled task does not run while the computer sleeps (the app has a setting to keep it awake).
 

@@ -1,6 +1,6 @@
 # linkedin-content-hub
 
-The small system behind my LinkedIn posting: a roadmap of the posts I have validated, a task that reads my LinkedIn analytics every weekday morning, and a dashboard that shows what works. I still write and publish every post myself. The system keeps the books.
+The small system behind my LinkedIn posting: a roadmap of the posts I have validated, a task that reads my LinkedIn analytics every morning, and a dashboard that shows what works. I still write and publish every post myself. The system keeps the books.
 
 ![The dashboard, on made-up sample data](docs/dashboard.png)
 
@@ -15,7 +15,7 @@ The small system behind my LinkedIn posting: a roadmap of the posts I have valid
 
 1. I write a draft in `posts/drafts/`, as plain text ready to paste, and add its line to `roadmap.json`: the week's Monday, the status `ready`, and the draft's file name in `draft` (that name is how the line gets ticked off).
 2. I publish it on LinkedIn myself, when I want.
-3. The next weekday morning, the task records the numbers, archives the post, ticks its line off and rebuilds the dashboard.
+3. The next morning, the task records the numbers, archives the post, ticks its line off and rebuilds the dashboard.
 4. Once a week, I open the dashboard and fill the next weeks of the roadmap.
 
 ## What's in the repo
@@ -51,6 +51,7 @@ The roadmap, posts and stats in this repo are made-up sample data, so the dashbo
 
 ## Limits worth knowing
 
+- **It goes against LinkedIn's terms.** Section 8.2 of [LinkedIn's User Agreement](https://www.linkedin.com/legal/user-agreement) bans bots and browser extensions that copy data from the site, with no exception for your own analytics, and LinkedIn's [help page on these tools](https://www.linkedin.com/help/linkedin/answer/a1341387) says accounts that use them can be restricted or shut down. The task keeps its footprint small: it reads only your own analytics pages, once a day, a few seconds apart (about one page per post of the last 90 days, plus three), and it never likes, comments, connects or messages anyone. The risk is yours to weigh. If LinkedIn ever warns you, switch the task off.
 - **LinkedIn changes its pages.** The task reads the analytics pages the way a person would. When LinkedIn moves a label, a snippet comes back empty, and the task says so in its report rather than writing a number it did not read.
 - **Tested on a French interface.** The top of the routine says what to change for another language.
 - **Claude in Chrome inside a scheduled task is not in Anthropic's docs.** My own task has used it almost every morning since 2 November; the docs neither promise nor rule it out.
