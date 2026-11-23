@@ -95,6 +95,46 @@ class Pipeline(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("give its format", result.stderr)
 
+    def test_first_reading_with_no_post(self):
+        # A new account: no post in the last 90 days, then the archiver runs as it does every day.
+        self.reading["posts"] = []
+        self.write_json("reading.json", self.reading)
+        self.run_script("scripts/record_stats.py", "inbox/reading.json")
+        self.write_json("posts-read.json", {"reading": "2026-11-23", "posts": []})
+        out = self.run_script("scripts/archive_posts.py", "inbox/posts-read.json").stdout
+        self.assertIn("no post to archive today", out)
+        self.run_script("scripts/build_dashboard.py")
+
+    def test_archive_before_any_reading_says_what_to_do(self):
+        result = self.run_script("scripts/archive_posts.py", "inbox/posts-read.json", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("run record_stats.py first", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_posts_folder_dropped_by_git(self):
+        # Once the sample is emptied, Git keeps no empty folder: posts/ may not exist on day one.
+        shutil.rmtree(self.tmp / "posts")
+        self.run_script("scripts/record_stats.py", "inbox/reading.json")
+        self.run_script("scripts/archive_posts.py", "inbox/posts-read.json")
+        self.assertEqual(len(list((self.tmp / "posts").glob("*.md"))), 1)
+
+    def test_missing_key_is_named(self):
+        del self.reading["days"]
+        self.write_json("reading.json", self.reading)
+        result = self.run_script("scripts/record_stats.py", "inbox/reading.json", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("'days'", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_dashboard_shows_one_reading(self):
+        # A later reading with no post must not show the posts of an earlier reading.
+        self.run_script("scripts/record_stats.py", "inbox/reading.json")
+        self.reading.update({"reading": "2026-11-24", "posts": []})
+        self.write_json("reading.json", self.reading)
+        self.run_script("scripts/record_stats.py", "inbox/reading.json")
+        out = self.run_script("scripts/build_dashboard.py").stdout
+        self.assertIn("reading of 2026-11-24, 0 posts", out)
+
     def test_empty_day_archives_nothing(self):
         self.run_script("scripts/record_stats.py", "inbox/reading.json")
         self.write_json("posts-read.json", {"reading": "2026-11-23", "posts": []})

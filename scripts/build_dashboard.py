@@ -16,16 +16,12 @@ STATS = ROOT / "stats"
 TEMPLATE = Path(__file__).resolve().parent / "dashboard_template.html"
 
 
-def latest(name):
+def rows_of(name):
     path = STATS / name
     if not path.exists():
         return []
     with open(path, encoding="utf-8", newline="") as f:
-        rows = list(csv.DictReader(f))
-    if not rows:
-        return []
-    last = max(r["reading"] for r in rows)
-    return [r for r in rows if r["reading"] == last]
+        return list(csv.DictReader(f))
 
 
 def main():
@@ -38,19 +34,21 @@ def main():
         sys.exit(__doc__)
     roadmap_path = ROOT / "roadmap.json"
     roadmap = json.loads(roadmap_path.read_text(encoding="utf-8")) if roadmap_path.exists() else {"weeks": []}
-    totals = latest("totals.csv")
+    # Every block of the page shows the same reading: the latest one in totals.csv.
+    totals = rows_of("totals.csv")
+    last = max((r["reading"] for r in totals), default=None)
     data = {
         "built": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
         "roadmap": roadmap,
-        "posts": latest("posts.csv"),
-        "totals": totals[0] if totals else {},
-        "days": latest("days.csv"),
+        "posts": [r for r in rows_of("posts.csv") if r["reading"] == last],
+        "totals": next((r for r in totals if r["reading"] == last), {}),
+        "days": [r for r in rows_of("days.csv") if r["reading"] == last],
     }
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     html = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     out.write_text(html, encoding="utf-8", newline="\n")
-    reading = data["totals"].get("reading", "no reading yet")
-    print(f"{out.name}: reading of {reading}, {len(data['posts'])} posts, {len(roadmap.get('weeks', []))} roadmap lines")
+    reading = f"reading of {last}" if last else "no reading yet"
+    print(f"{out.name}: {reading}, {len(data['posts'])} posts, {len(roadmap.get('weeks', []))} roadmap lines")
 
 
 if __name__ == "__main__":

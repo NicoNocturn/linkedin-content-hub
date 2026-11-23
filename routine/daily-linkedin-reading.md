@@ -2,16 +2,17 @@
 
 This is the prompt of the task that runs every weekday morning on my computer. It opens my LinkedIn analytics in Chrome, read-only, records the numbers, archives what I published, and rebuilds the dashboard.
 
-**What it needs.** The Claude desktop app with a scheduled task (Code tab), the Claude in Chrome extension connected, Chrome open and signed in to LinkedIn, the computer awake at the scheduled time, and Python 3.10 or later. No other dependency.
+**What it needs.** Everything in the README's "What you need": the Claude desktop app on a direct Anthropic plan, the Claude in Chrome extension connected and signed in to the same organization as Claude Code, LinkedIn signed in in that browser, and Python 3.10 or later. At the scheduled time, the app must be running, the browser open and the computer awake: a scheduled task does not run while the computer sleeps (the app has a setting to keep it awake).
 
 **How to install it.**
 
-1. Copy everything below the line into a new scheduled task, working folder: your copy of this repo.
-2. Replace every `<REPO>` with the absolute path of that copy, with forward slashes (for example `D:/code/linkedin-content-hub`).
-3. Schedule it on weekdays, at an hour your computer is on. Mine runs at 9:30.
-4. Run it once by hand and approve what it asks, choosing to always allow. Every command below is fixed text and runs every day, so after that first run it no longer stops to ask.
+1. In the desktop app, Code tab, click Scheduled in the sidebar and create a task. Paste everything below the line as its instructions, and pick your copy of this repo as its local folder.
+2. Replace every `<REPO>` with the absolute path of that copy, with forward slashes (for example `D:/code/linkedin-content-hub`). On macOS or Linux, also replace `python` with `python3` in steps 6, 7 and 8.
+3. Schedule it daily or on weekdays, at an hour your computer is on. Mine runs at 9:30.
+4. Set the task's permission mode to Accept edits: it writes two files in `inbox/` every day.
+5. Click Run now and stay in front of it. Approve each prompt with "always allow", and allow linkedin.com when Claude in Chrome asks. Every command below is fixed text and runs every day; Anthropic's docs say later runs then skip most prompts, so watch the first scheduled run too.
 
-**If your LinkedIn is not in French.** The snippets in steps 4 and 5 look for the labels of a French interface (« Impressions », « Membres touchés », « Vues du profil », « Abonnés gagnés », « Commentaires », « Enregistrements », « a publié ce contenu », « Découverte »). That is the only version I have tested. On your first run by hand, when a snippet returns empty values, ask Claude to read the text of one post's analytics page and rewrite the patterns with your interface's labels, then save the edited prompt in your task.
+**If your LinkedIn is not in French.** The snippets in steps 4 and 5 look for the words of a French interface: « Découverte » and « Impressions », « relations », « Membres touchés », « Vues du profil », « Abonnés gagnés », « Réactions », « Commentaires », « Enregistrements », and « a publié ce contenu » around the post text. That is the only version I have tested. On your first run by hand, if the task stops because the labels don't match, ask Claude to read the text of one post's analytics page and rewrite these patterns with your interface's words, then save the edited prompt in your task.
 
 **What it never does.** It never publishes, comments, reacts, sends or clicks anything on LinkedIn. You write and publish every post yourself.
 
@@ -47,7 +48,7 @@ For each post you kept, open `https://www.linkedin.com/analytics/post-summary/ur
 (()=>{const t=(document.querySelector('main')||document.body).innerText.normalize('NFC').replace(/\s+/g,' ').replace(/(\d)[\s\u202f\u00a0](\d{3})/g,'$1$2');const g=r=>{const m=t.match(r);return m?m[1]:''};return [location.pathname.match(/\d{19}/)[0],g(/couverte (\d+) Impressions/),g(/relations\) (\d+) ?%/),g(/(\d+) Membres touch/),g(/(\d+) Vues du profil/),g(/(\d+) Abonn\S+ gagn/),g(/actions (\d+)/),g(/Commentaires (\d+)/),g(/Enregistrements (\d+)/)].join(',')})()
 ```
 
-It returns, in this order: id, impressions, share in my network (%), members reached, profile views, followers gained, reactions, comments, saves. An empty value means LinkedIn doesn't show it today (often the case for members reached): write `null`, never copy it from an earlier reading. If the impressions are empty, read the page again once after 5 seconds.
+It returns, in this order: id, impressions, share in my network (%), members reached, profile views, followers gained, reactions, comments, saves. An empty value means LinkedIn doesn't show it today (often the case for members reached): write `null`, never copy it from an earlier reading. If the impressions are empty, read the page again once after 5 seconds. If they are still empty for every post, the labels no longer match the page: stop there, write nothing, and say so in one line.
 
 A new post also needs its `format`: `document` if the list of posts shows a page count under it, `image` or `video` if the post carries one, otherwise `text`. If you are unsure, open `https://www.linkedin.com/feed/update/urn:li:activity:<id>/` and look. Say in your report which format you chose and why.
 
@@ -103,4 +104,4 @@ If there is no remote, skip the push.
 
 ## 10. Report
 
-Three lines at most: the number of posts read, and each post archived (its first line, its draft or "no matching draft"); impressions and followers gained over 90 days; what could not be done.
+Three lines at most: the number of posts read, and each post archived (its first line, its draft or "no matching draft", and "no roadmap line names this draft" when the script says so); impressions and followers gained over 90 days; what could not be done.

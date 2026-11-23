@@ -2,7 +2,7 @@
 
 Usage: python scripts/record_stats.py <reading.json>
 
-The scheduled task (routine/daily-linkedin-stats.md) reads your LinkedIn analytics in Chrome,
+The scheduled task (routine/daily-linkedin-reading.md) reads your LinkedIn analytics in Chrome,
 read-only, and writes what it read to a JSON file (example: examples/reading-2026-11-23.json):
 
   {"reading": "YYYY-MM-DD",
@@ -149,6 +149,12 @@ def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+    for key in ("reading", "posts", "totals", "days"):
+        if key not in data:
+            sys.exit(f"reading JSON: the key {key!r} is missing (see the format at the top of this script)")
+    for key in ("start", "impressions_cumulative", "followers_cumulative"):
+        if key not in data["days"]:
+            sys.exit(f"reading JSON: the key 'days.{key}' is missing")
     reading = data["reading"]
     datetime.date.fromisoformat(reading)
     print(f"posts.csv: {record_posts(reading, data['posts'])} rows for {reading}")

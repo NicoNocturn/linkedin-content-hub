@@ -36,10 +36,12 @@ BLANK = "⠀"  # LinkedIn keeps an empty line alive with this braille blank
 
 
 def latest_reading():
+    if not POSTS_CSV.exists():
+        sys.exit("stats/posts.csv not found: run record_stats.py first")
     with open(POSTS_CSV, encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
         fields, rows = reader.fieldnames, list(reader)
-    last = max(r["reading"] for r in rows)
+    last = max((r["reading"] for r in rows), default=None)
     return fields, rows, last
 
 
@@ -103,12 +105,16 @@ def tick_off(draft_name, post_id, published):
 
 
 def archive(data):
-    fields, rows, last = latest_reading()
-    today = {r["id"]: r for r in rows if r["reading"] == last}
-    known = archived_ids()
-    done = {}
     if not data["posts"]:
         print("no post to archive today")
+        return
+    fields, rows, last = latest_reading()
+    if last is None:
+        sys.exit("stats/posts.csv has no post yet: run record_stats.py first")
+    today = {r["id"]: r for r in rows if r["reading"] == last}
+    POSTS_DIR.mkdir(parents=True, exist_ok=True)
+    known = archived_ids()
+    done = {}
     for p in data["posts"]:
         pid, text = str(p["id"]), unicodedata.normalize("NFC", p["text"]).strip()
         if pid in known:
