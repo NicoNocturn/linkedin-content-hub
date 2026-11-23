@@ -1,0 +1,67 @@
+{
+  "about": "The posts you validated, week by week. A line names its draft in posts/drafts/; the morning after you publish, scripts/archive_posts.py archives the post and marks the line published. Statuses: idea, to write, ready, published.",
+  "sample": true,
+  "weeks": [
+    {
+      "monday": "2026-10-26",
+      "post": "Three things I stopped automating",
+      "status": "published",
+      "draft": "2026-10-26-stopped-automating.txt",
+      "notes": "Tuesday morning.",
+      "post_id": "7521117300327672557",
+      "published": "2026-10-28"
+    },
+    {
+      "monday": "2026-11-02",
+      "post": "Writing every post the evening before",
+      "status": "published",
+      "draft": "2026-11-02-evening-writing.txt",
+      "notes": "Try an evening slot this time.",
+      "post_id": "7523807526912380299",
+      "published": "2026-11-04"
+    },
+    {
+      "monday": "2026-11-09",
+      "post": "How I keep a posting rhythm",
+      "status": "published",
+      "draft": "2026-11-09-json-file.txt",
+      "notes": "Answers a reader's question.",
+      "post_id": "7526186955573697441",
+      "published": "2026-11-11"
+    },
+    {
+      "monday": "2026-11-16",
+      "post": "What twelve weeks of stats showed me",
+      "status": "published",
+      "draft": "2026-11-16-twelve-weeks.txt",
+      "notes": "Evening again, with the chart as image.",
+      "post_id": "7529585600105142749",
+      "published": "2026-11-20"
+    },
+    {
+      "monday": "2026-11-23",
+      "post": "Writing next week's post on Sunday",
+      "status": "ready",
+      "draft": "2026-11-23-sunday-writing.txt",
+      "notes": "Draft validated on Saturday."
+    },
+    {
+      "monday": "2026-11-30",
+      "post": "What I would change in my roadmap after three months",
+      "status": "to write",
+      "notes": "Needs the December reading first."
+    },
+    {
+      "monday": "2026-12-07",
+      "post": "Posts that got profile views but no likes",
+      "status": "idea",
+      "notes": "Check the all-posts table before writing."
+    },
+    {
+      "monday": null,
+      "post": "A carousel version of the five checks",
+      "status": "idea",
+      "notes": "No date until a slot frees up."
+    }
+  ]
+}

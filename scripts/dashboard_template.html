@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LinkedIn content hub</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --card: #ffffff; --ink: #1f1d1a; --muted: #6b665d; --line: #e4e0d6;
+    --bar: #3d6b8c; --mark: #c4572a; --ok: #2f7a4f; --ok-bg: #e3f1e8; --ready: #2d5f8a; --ready-bg: #e2ecf5;
+    --todo: #8a5a14; --todo-bg: #f6ecd9; --idea: #5d5a54; --idea-bg: #eceae4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1b19; --card: #262522; --ink: #ece9e2; --muted: #a39e93; --line: #3a3833;
+      --bar: #7fa8c7; --mark: #e58a5f; --ok: #8fd0a6; --ok-bg: #22392b; --ready: #9cc3e6; --ready-bg: #213244;
+      --todo: #e7c07a; --todo-bg: #3d3220; --idea: #c9c5bc; --idea-bg: #34322d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 16px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 0 0 4px; }
+  .sub, .note { color: var(--muted); margin: 0; }
+  .note { font-size: 13.5px; margin-bottom: 12px; }
+  .sample { margin: 16px 0 0; padding: 10px 14px; border: 1px dashed var(--muted); border-radius: 8px; font-size: 14px; }
+  section { margin-top: 28px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 20px; }
+  .kpi .label { color: var(--muted); font-size: 13px; }
+  .kpi .big { font-size: 28px; font-weight: 650; margin-top: 2px; }
+  .kpi .small { color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .box { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12.5px; white-space: nowrap; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.week { white-space: nowrap; color: var(--muted); }
+  td.nowrap { white-space: nowrap; }
+  td.first { min-width: 200px; }
+  th button { all: unset; cursor: pointer; }
+  th button:hover, th button:focus-visible { color: var(--ink); text-decoration: underline; }
+  .pill { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12.5px; white-space: nowrap; }
+  .published { color: var(--ok); background: var(--ok-bg); }
+  .ready { color: var(--ready); background: var(--ready-bg); }
+  .to-write { color: var(--todo); background: var(--todo-bg); }
+  .idea, .other { color: var(--idea); background: var(--idea-bg); }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; }
+  .legend { display: flex; gap: 16px; font-size: 13px; color: var(--muted); margin-bottom: 8px; flex-wrap: wrap; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 13px;
+         padding: 6px 9px; border-radius: 6px; max-width: 280px; display: none; z-index: 2; }
+  .empty { color: var(--muted); font-style: italic; }
+  @media (max-width: 640px) { .wide-only { display: none; } h1 { font-size: 22px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>LinkedIn content hub</h1>
+    <p class="sub" id="reading"></p>
+    <p class="sample" id="sample" hidden></p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section id="roadmap">
+    <h2>Roadmap</h2>
+    <p class="note">The posts you validated, week by week. A line turns to published on its own the morning after you post it; a post you published without a line shows up in its week as off plan.</p>
+    <div class="card box"><table>
+      <thead><tr><th>Week</th><th>Post</th><th>Status</th><th class="wide-only">Notes</th></tr></thead>
+      <tbody id="roadmap-rows"></tbody>
+    </table></div>
+  </section>
+
+  <section id="daily">
+    <h2>Impressions per day</h2>
+    <p class="note">Each spike follows a post and fades within two or three days. Point at a day to see what went out. LinkedIn counts its days in UTC.</p>
+    <div class="card">
+      <div class="legend"><span><span class="sw" style="background:var(--bar)"></span>Impressions that day</span><span><span class="sw" style="background:var(--mark)"></span>A post went out that day</span></div>
+      <div class="chart" id="daily-chart"><div class="tip" id="tip"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="grid">
+      <div id="by-time">
+        <h2>By time of day</h2>
+        <p class="note">Your local time. Median impressions per post, and profile views in total. With two or three posts in a group, the median tells you what to test next.</p>
+        <div class="card box"><table><thead><tr><th>Posted</th><th class="n">Posts</th><th class="n">Median impr.</th><th class="n">Profile views</th></tr></thead><tbody id="by-time-rows"></tbody></table></div>
+      </div>
+      <div id="by-format">
+        <h2>By format</h2>
+        <p class="note">Same measures, split by what the post carried.</p>
+        <div class="card box"><table><thead><tr><th>Format</th><th class="n">Posts</th><th class="n">Median impr.</th><th class="n">Profile views</th></tr></thead><tbody id="by-format-rows"></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="all-posts">
+    <h2>All posts</h2>
+    <p class="note">Click a column title to sort. Archived means the text as published is saved in posts/.</p>
+    <div class="card box"><table>
+      <thead><tr id="all-head"></tr></thead>
+      <tbody id="all-rows"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<script id="data" type="application/json">/*__DATA__*/null</script>
+<script>
+(function () {
+  const D = JSON.parse(document.getElementById('data').textContent) || {};
+  const roadmap = D.roadmap || { weeks: [] };
+  const totals = D.totals || {};
+  const num = (v) => (v === '' || v == null ? null : Number(v));
+  const fmt = (v) => (v == null || isNaN(v) ? '-' : Math.round(v).toLocaleString('en-US'));
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const day = (d) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  const time = (d) => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const ymdLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const mondayOf = (d) => { const m = new Date(d); m.setHours(12, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return ymdLocal(m); };
+  const fromYmd = (s) => new Date(`${s}T12:00:00`);
+  const median = (xs) => { const s = xs.filter((x) => x != null).sort((a, b) => a - b); const n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; };
+
+  const posts = (D.posts || []).map((p) => ({ ...p, date: new Date(p.published_at), imp: num(p.impressions), views: num(p.profile_views) }));
+  const byId = Object.fromEntries(posts.map((p) => [p.id, p]));
+
+  // Header
+  document.getElementById('reading').textContent = totals.reading
+    ? `Reading of ${fromYmd(totals.reading).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}, over the last 90 days.`
+    : 'No reading yet: run the scheduled task once.';
+  if (roadmap.sample) { const s = document.getElementById('sample'); s.hidden = false; s.textContent = 'Sample data, made up so the page has something to show. Empty stats/, posts/ and roadmap.json before your first real reading.'; }
+
+  // Key figures
+  const viewsFromPosts = posts.reduce((a, p) => a + (p.views || 0), 0);
+  const change = num(totals.change_pct);
+  const kpis = [
+    ['Impressions', fmt(num(totals.impressions)), change == null ? '' : `${change >= 0 ? '+' : ''}${change}% on the 90 days before`],
+    ['Members reached', fmt(num(totals.members_reached)), num(totals.in_network_pct) == null ? 'LinkedIn did not show it today' : `${100 - num(totals.in_network_pct)}% outside your network`],
+    ['Profile views from a post', fmt(viewsFromPosts), `over ${posts.length} posts`],
+    ['Followers gained', fmt(num(totals.followers_gained)), num(totals.followers_total) == null ? '' : `${fmt(num(totals.followers_total))} in total`],
+  ];
+  const kb = document.getElementById('kpis');
+  kpis.forEach(([label, big, small]) => { const c = el('div', 'card kpi'); c.append(el('div', 'label', label), el('div', 'big', big), el('div', 'small', small)); kb.append(c); });
+
+  // Roadmap: validated lines, then posts published off plan in their week
+  const linked = new Set();
+  const lines = (roadmap.weeks || []).map((w, i) => {
+    const p = w.post_id && byId[w.post_id];
+    if (w.post_id) linked.add(w.post_id);
+    let note = w.notes || '';
+    if (w.status === 'published') note = p ? `Published ${day(p.date)} at ${time(p.date)}: ${fmt(p.imp)} impressions so far.` : `Published${w.published ? ' on ' + w.published : ''}.`;
+    return { key: w.monday || '9999', order: i, week: w.monday ? `Mon ${fromYmd(w.monday).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : 'No date', post: w.post || '', status: w.status || '', note };
+  });
+  const firstMonday = (roadmap.weeks || []).map((w) => w.monday).filter(Boolean).sort()[0];
+  posts.forEach((p) => {
+    if (linked.has(p.id) || !firstMonday) return;
+    const mon = mondayOf(p.date);
+    if (mon < firstMonday) return;
+    lines.push({ key: mon, order: 1000 + lines.length, week: `Mon ${fromYmd(mon).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`, post: p.first_line, status: 'published', note: `Off plan. Published ${day(p.date)} at ${time(p.date)}: ${fmt(p.imp)} impressions so far.` });
+  });
+  lines.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : a.order - b.order));
+  const rb = document.getElementById('roadmap-rows');
+  if (!lines.length) { const tr = el('tr'); const td = el('td', 'empty', 'No line yet: add your validated posts to roadmap.json.'); td.colSpan = 4; tr.append(td); rb.append(tr); }
+  lines.forEach((l) => {
+    const tr = el('tr');
+    const st = el('td'); const cls = { published: 'published', ready: 'ready', 'to write': 'to-write', idea: 'idea' }[l.status] || 'other';
+    st.append(el('span', `pill ${cls}`, l.status || '-'));
+    tr.append(el('td', 'week', l.week), el('td', '', l.post), st, el('td', 'wide-only', l.note));
+    rb.append(tr);
+  });
+
+  // Impressions per day
+  const days = (D.days || []).map((d) => ({ day: d.day, imp: num(d.impressions) || 0 }));
+  const postsByDay = {};
+  posts.forEach((p) => { const k = p.published_at.slice(0, 10); (postsByDay[k] = postsByDay[k] || []).push(p); });
+  const chart = document.getElementById('daily-chart');
+  const tip = document.getElementById('tip');
+  const NS = 'http://www.w3.org/2000/svg';
+  function drawDaily() {
+    chart.querySelectorAll('svg, .empty').forEach((n) => n.remove());
+    if (!days.length) { chart.append(el('p', 'empty', 'No reading yet.')); return; }
+    const W = Math.max(chart.clientWidth, 280), H = 220, top = 14, bottom = 22, left = 4;
+    const max = Math.max(1, ...days.map((d) => d.imp));
+    const bw = (W - left) / days.length;
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H);
+    const y = (v) => H - bottom - (v / max) * (H - top - bottom);
+    days.forEach((d, i) => {
+      const x = left + i * bw;
+      const r = document.createElementNS(NS, 'rect');
+      r.setAttribute('x', x + bw * 0.15); r.setAttribute('width', Math.max(1, bw * 0.7));
+      r.setAttribute('y', y(d.imp)); r.setAttribute('height', Math.max(0, H - bottom - y(d.imp)));
+      r.setAttribute('fill', 'var(--bar)'); svg.append(r);
+      if (postsByDay[d.day]) {
+        const c = document.createElementNS(NS, 'circle');
+        c.setAttribute('cx', x + bw / 2); c.setAttribute('cy', Math.max(6, y(d.imp) - 7)); c.setAttribute('r', Math.min(4.5, Math.max(2.5, bw * 0.35)));
+        c.setAttribute('fill', 'var(--mark)'); svg.append(c);
+      }
+      const hit = document.createElementNS(NS, 'rect');
+      hit.setAttribute('x', x); hit.setAttribute('width', bw); hit.setAttribute('y', 0); hit.setAttribute('height', H);
+      hit.setAttribute('fill', 'transparent');
+      hit.addEventListener('mousemove', (ev) => {
+        const ps = postsByDay[d.day] || [];
+        tip.textContent = `${fromYmd(d.day).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}: ${fmt(d.imp)} impressions` + ps.map((p) => `. Posted: ${p.first_line}`).join('');
+        tip.style.display = 'block';
+        const box = chart.getBoundingClientRect();
+        const left = Math.min(ev.clientX - box.left + 12, box.width - tip.offsetWidth - 4);
+        tip.style.left = `${Math.max(0, left)}px`; tip.style.top = `${Math.max(0, ev.clientY - box.top - tip.offsetHeight - 10)}px`;
+      });
+      hit.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+      svg.append(hit);
+    });
+    [[0, days[0].day], [days.length - 1, days[days.length - 1].day]].forEach(([i, label], k) => {
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', k ? W - 2 : left); t.setAttribute('y', H - 5); t.setAttribute('text-anchor', k ? 'end' : 'start');
+      t.setAttribute('font-size', '12'); t.setAttribute('fill', 'var(--muted)');
+      t.textContent = fromYmd(label).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); svg.append(t);
+    });
+    chart.append(svg);
+  }
+  drawDaily();
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawDaily, 150); });
+
+  // By time of day, by format
+  function groupTable(id, keyOf, order) {
+    const groups = {};
+    posts.forEach((p) => { const k = keyOf(p); (groups[k] = groups[k] || []).push(p); });
+    const keys = order ? order.filter((k) => groups[k]) : Object.keys(groups).sort();
+    const body = document.getElementById(id);
+    if (!keys.length) { const tr = el('tr'); const td = el('td', 'empty', 'No post yet.'); td.colSpan = 4; tr.append(td); body.append(tr); return; }
+    keys.forEach((k) => {
+      const g = groups[k];
+      const tr = el('tr');
+      tr.append(el('td', '', k), el('td', 'n', fmt(g.length)), el('td', 'n', fmt(median(g.map((p) => p.imp)))), el('td', 'n', fmt(g.reduce((a, p) => a + (p.views || 0), 0))));
+      body.append(tr);
+    });
+  }
+  const moments = ['Morning, before 12:00', 'Afternoon, 12:00 to 17:00', 'Evening, after 17:00'];
+  groupTable('by-time-rows', (p) => { const h = p.date.getHours(); return h < 12 ? moments[0] : h < 17 ? moments[1] : moments[2]; }, moments);
+  groupTable('by-format-rows', (p) => p.format || 'unknown');
+
+  // All posts, sortable
+  const cols = [
+    ['published_at', 'Published', 'nowrap', (p) => `${day(p.date)}, ${time(p.date)}`],
+    ['first_line', 'First line', 'first', (p) => p.first_line],
+    ['format', 'Format', 'wide-only', (p) => p.format],
+    ['impressions', 'Impressions', 'n', (p) => fmt(p.imp)],
+    ['reactions', 'Reactions', 'n wide-only', (p) => fmt(num(p.reactions))],
+    ['comments', 'Comments', 'n wide-only', (p) => fmt(num(p.comments))],
+    ['profile_views', 'Profile views', 'n', (p) => fmt(p.views)],
+    ['followers', 'Followers', 'n wide-only', (p) => fmt(num(p.followers))],
+    ['archive', 'Archived', 'wide-only', (p) => (p.archive ? 'yes' : 'no')],
+  ];
+  let sortKey = 'published_at', sortDir = -1;
+  const head = document.getElementById('all-head');
+  cols.forEach(([key, label, cls]) => {
+    const th = el('th', cls); const b = el('button', '', label); b.type = 'button';
+    b.addEventListener('click', () => { sortDir = sortKey === key ? -sortDir : -1; sortKey = key; drawAll(); });
+    th.append(b); head.append(th);
+  });
+  function drawAll() {
+    const body = document.getElementById('all-rows'); body.textContent = '';
+    const numeric = !['published_at', 'first_line', 'format', 'archive'].includes(sortKey);
+    const val = (p) => (numeric ? num(p[sortKey]) ?? -1 : String(p[sortKey] || ''));
+    [...posts].sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * sortDir).forEach((p) => {
+      const tr = el('tr'); cols.forEach(([, , cls, show]) => tr.append(el('td', cls, show(p)))); body.append(tr);
+    });
+    if (!posts.length) { const tr = el('tr'); const td = el('td', 'empty', 'No post yet.'); td.colSpan = cols.length; tr.append(td); body.append(tr); }
+  }
+  drawAll();
+})();
+</script>
+</body>
+</html>
